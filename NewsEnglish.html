@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NewsEnglish · 每日英语新闻</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,"PingFang SC","Noto Sans",sans-serif;background:#f2f5fa;color:#1b2436}
+header{position:sticky;top:0;z-index:30;background:#0e3a66;color:#fff;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+header b{font-size:18px}header small{display:block;font-size:12px;opacity:.8}
+header button{background:#fff;color:#0e3a66;border:0;border-radius:20px;padding:6px 12px;font-size:13px}
+nav{display:flex;gap:8px;padding:10px 14px;overflow-x:auto;background:#fff;position:sticky;top:56px;z-index:29}
+nav button{flex:0 0 auto;border:1px solid #d6ddea;background:#fff;border-radius:20px;padding:6px 14px;font-size:14px}
+nav button.on{background:#0e3a66;color:#fff;border-color:#0e3a66}
+main{padding:12px}
+.card{background:#fff;border-radius:14px;overflow:hidden;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.card img{width:100%;height:170px;object-fit:cover;background:#e5eaf2}
+.card .bd{padding:12px}
+.card h3{margin:0 0 6px;font-size:17px;line-height:1.4}
+.card .meta{font-size:12px;color:#7b8698}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:#eaf1ff;color:#0e3a66;margin-right:6px}
+#reader{position:fixed;inset:0;background:#fff;z-index:40;display:none;overflow-y:auto;padding-bottom:90px}
+#reader.on{display:block}
+#reader .top{position:sticky;top:0;background:#0e3a66;color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+#reader img{width:100%;max-height:230px;object-fit:cover}
+#reader .body{padding:14px;font-size:17px;line-height:2}
+#reader h2{font-size:21px;line-height:1.4;margin:10px 0}
+.w{cursor:pointer;border-radius:3px;padding:0 1px}
+.w:active,.w.hl{background:#ffe9a8}
+.s{position:relative}
+.s.cur{background:#eaf6ff;border-radius:4px}
+.sbtn{border:0;background:#eef2f8;border-radius:50%;width:26px;height:26px;margin-left:4px;font-size:13px;vertical-align:middle}
+#sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.15);padding:16px;z-index:50;display:none}
+#sheet.on{display:block}
+#sheet h4{margin:0 0 4px;font-size:22px}#sheet .ph{color:#7b8698;font-size:14px}
+#sheet p{margin:8px 0;font-size:15px;line-height:1.6}
+#sheet .row{display:flex;gap:8px;margin-top:10px}
+#sheet .row button{flex:1;border:0;border-radius:10px;padding:10px;font-size:14px}
+#tts{position:fixed;left:0;right:0;bottom:0;background:#0e3a66;color:#fff;padding:10px 14px;display:none;align-items:center;gap:10px;z-index:45}
+#tts.on{display:flex}
+#tts button{border:0;border-radius:8px;padding:8px 12px;background:#fff;color:#0e3a66;font-size:14px}
+#tts select{border-radius:8px;padding:6px;font-size:13px}
+#vocab{position:fixed;inset:0;background:#f2f5fa;z-index:41;display:none;overflow-y:auto;padding:14px}
+#vocab.on{display:block}
+.vw{background:#fff;border-radius:12px;padding:12px;margin-bottom:10px}
+</style>
+</head>
+<body>
+<header>
+  <div><b>NewsEnglish</b><small id="today"></small></div>
+  <button onclick="openVocab()">生词本 <span id="vc">0</span></button>
+</header>
+<nav id="tabs"></nav>
+<main id="list"></main>
+
+<div id="reader">
+  <div class="top"><b id="rTitle"></b>
+    <div><button onclick="speakAll()" style="border:0;border-radius:8px;padding:6px 10px">🔊 全文</button>
+    <button onclick="closeReader()" style="border:0;border-radius:8px;padding:6px 10px;margin-left:6px">✕</button></div>
+  </div>
+  <div id="rBody"></div>
+</div>
+
+<div id="sheet">
+  <h4 id="sW"></h4><div class="ph" id="sPh"></div>
+  <p><b>中文：</b><span id="sZh">查询中…</span></p>
+  <p><b>英文释义：</b><span id="sEn">—</span></p>
+  <div class="row">
+    <button style="background:#eef2f8" onclick="speakWord()">🔊 朗读</button>
+    <button style="background:#0e3a66;color:#fff" onclick="addVocab()">＋ 生词本</button>
+    <button style="background:#eef2f8" onclick="document.getElementById('sheet').classList.remove('on')">关闭</button>
+  </div>
+</div>
+
+<div id="tts">
+  <button id="tPlay" onclick="togglePlay()">⏸</button>
+  <span id="tInfo" style="flex:1;font-size:13px"></span>
+  <select id="tRate" onchange="restart()"><option value="0.7">0.7x</option><option value="1" selected>1.0x</option><option value="1.2">1.2x</option></select>
+  <select id="tVoice" onchange="restart()"></select>
+</div>
+
+<div id="vocab"><b style="font-size:18px">生词本</b>
+  <button onclick="review()" style="float:right;border:0;border-radius:8px;padding:6px 12px;background:#0e3a66;color:#fff">随机复习</button>
+  <div id="vList" style="margin-top:14px"></div>
+</div>
+
+<script>
+/* ===== 数据：把 news.json 的内容直接塞到这里 ===== */
+let ART=[
+ {id:1,cat:"china",title:"China's High-Speed Rail Network Exceeds 45,000 Kilometers",source:"Xinhua",date:"2026-10-19",img:"https://picsum.photos/seed/rail/800/450",
+  paras:["China's high-speed railway network has exceeded 45,000 kilometers, connecting more than 95 percent of cities with a population above 500,000.","Officials said the expansion has shortened travel times and promoted regional economic integration along major corridors."]},
+ {id:2,cat:"world",title:"Global Climate Talks Open With Focus on Financing",source:"Xinhua",date:"2026-10-19",img:"https://picsum.photos/seed/climate/800/450",
+  paras:["Delegates from nearly 200 countries gathered on Monday to negotiate rules on climate finance for the next decade.","Developing nations urged wealthier economies to deliver on long-promised funding, while negotiators sought agreement on carbon market mechanisms."]}
+];
+
+/* ===== 列表渲染 ===== */
+let cat='all';
+const CATS=[['all','全部'],['china','国内 China'],['world','国际 World']];
+document.getElementById('today').textContent=new Date().toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'long'});
+document.getElementById('tabs').innerHTML=CATS.map(c=>`<button data-c="${c[0]}" class="${c[0]==='all'?'on':''}" onclick="setCat('${c[0]}')">${c[1]}</button>`).join('');
+function setCat(c){cat=c;document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.c===c));render();}
+function render(){
+  document.getElementById('list').innerHTML=ART.filter(a=>cat==='all'||a.cat===cat).map(a=>`
+   <div class="card" onclick="openArticle(${a.id})">
+     <img src="${a.img}" loading="lazy" onerror="this.style.display='none'">
+     <div class="bd"><h3>${a.title}</h3>
+       <div class="meta"><span class="tag">${a.cat==='china'?'国内':'国际'}</span>${a.source} · ${a.date} · ${wc(a)} 词</div>
+     </div></div>`).join('');
+}
+const wc=a=>a.paras.join(' ').split(/\s+/).filter(Boolean).length;
+
+/* ===== 阅读页 ===== */
+let cur=null;
+function splitSent(t){return t.replace(/([.!?]["'”’]?)(\s+)/g,'$1\u0001$2').split('\u0001').filter(s=>s.trim());}
+function openArticle(id){
+  cur=ART.find(a=>a.id===id);
+  document.getElementById('rTitle').textContent=cur.title;
+  let html=`<img src="${cur.img}" onerror="this.style.display='none'"><div class="body">`;
+  cur.paras.forEach(p=>{
+    html+='<p>';
+    splitSent(p).forEach((s,si)=>{
+      html+=`<span class="s" data-s="${si}">`;
+      s.match(/[A-Za-z][A-Za-z'’-]*|[^A-Za-z]+/g).forEach(tk=>{
+        html+= /^[A-Za-z]/.test(tk) ? `<span class="w">${tk}</span>` : tk;
+      });
+      html+=`</span><button class="sbtn" onclick="speakOne(${si})">🔊</button> `;
+    });
+    html+='</p>';
+  });
+  html+=`<p style="color:#7b8698;font-size:13px">Source: ${cur.source} · ${cur.date}</p></div>`;
+  document.getElementById('rBody').innerHTML=html;
+  document.getElementById('reader').classList.add('on');
+}
+function closeReader(){stop();document.getElementById('reader').classList.remove('on');}
+document.getElementById('rBody').addEventListener('click',e=>{
+  const w=e.target.closest('.w'); if(w) lookup(w.textContent.replace(/[^A-Za-z'’-]/g,''),w);
+});
+
+/* ===== 查词 ===== */
+const CACHE=JSON.parse(localStorage.getItem('ne_cache')||'{}');
+let curWord='',curEl=null;
+async function lookup(word,el){
+  curWord=word;curEl=el;
+  document.getElementById('sW').textContent=word;
+  document.getElementById('sPh').textContent='';
+  document.getElementById('sZh').textContent='查询中…';
+  document.getElementById('sEn').textContent='—';
+  document.getElementById('sheet').classList.add('on');
+  const k=word.toLowerCase();
+  if(CACHE[k]){fill(CACHE[k]);return;}
+  let ph='',en='',zh='';
+  try{const r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+k);
+    if(r.ok){const d=await r.json();const m=d[0];
+      ph=(m.phonetics||[]).find(p=>p.text)?.text||m.phonetic||'';
+      en=m.meanings?.[0]?.definitions?.[0]?.definition||'';}}catch(e){}
+  try{const r=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(k)+'&langpair=en|zh-CN');
+    if(r.ok){const d=await r.json();zh=d.responseData?.translatedText||'';}}catch(e){}
+  const o={ph,en,zh};CACHE[k]=o;localStorage.setItem('ne_cache',JSON.stringify(CACHE));fill(o);
+}
+function fill(o){document.getElementById('sPh').textContent=o.ph;document.getElementById('sZh').textContent=o.zh||'暂无';document.getElementById('sEn').textContent=o.en||'—';}
+
+/* ===== 生词本 ===== */
+let VOC=JSON.parse(localStorage.getItem('ne_vocab')||'[]');
+function addVocab(){
+  if(!VOC.find(v=>v.w===curWord)){VOC.push({w:curWord,zh:document.getElementById('sZh').textContent,d:new Date().toISOString().slice(0,10)});
+    localStorage.setItem('ne_vocab',JSON.stringify(VOC));}
+  document.getElementById('vc').textContent=VOC.length;
+  document.getElementById('sheet').classList.remove('on');
+}
+document.getElementById('vc').textContent=VOC.length;
+function openVocab(){document.getElementById('vList').innerHTML=VOC.map((v,i)=>
+  `<div class="vw"><b>${v.w}</b> <span style="color:#7b8698;font-size:13px">${v.d}</span>
+   <div style="margin-top:6px;font-size:15px">${v.zh}</div>
+   <button onclick="speakText('${v.w}')" style="border:0;background:#eef2f8;border-radius:8px;padding:6px 10px;margin-top:6px">🔊</button>
+   <button onclick="delV(${i})" style="border:0;background:#ffe3e3;border-radius:8px;padding:6px 10px;margin-left:6px">删除</button></div>`).join('')||'<p>还没有生词，点正文里的单词加入吧。</p>';
+  document.getElementById('vocab').classList.add('on');}
+function delV(i){VOC.splice(i,1);localStorage.setItem('ne_vocab',JSON.stringify(VOC));document.getElementById('vc').textContent=VOC.length;openVocab();}
+function review(){if(!VOC.length)return alert('生词本是空的');const v=VOC[Math.floor(Math.random()*VOC.length)];
+  if(confirm(v.w+'\n\n点击「确定」显示释义'))alert(v.zh);}
+
+/* ===== 朗读 ===== */
+const synth=window.speechSynthesis;let Q=[],qi=0,playing=false;
+function loadVoices(){const vs=synth.getVoices().filter(v=>/^en/i.test(v.lang));
+  document.getElementById('tVoice').innerHTML=vs.map((v,i)=>`<option value="${i}">${v.name.slice(0,22)}</option>`).join('');}
+synth.onvoiceschanged=loadVoices;loadVoices();
+function sentences(){const out=[];cur.paras.forEach(p=>splitSent(p).forEach(s=>out.push(s)));return out;}
+function speakOne(i){stop();Q=sentences();qi=i;play();}
+function speakAll(){stop();Q=sentences();qi=0;play();}
+function speakWord(){speakText(curWord);}
+function speakText(t){synth.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=1;synth.speak(u);}
+function play(){
+  if(qi>=Q.length){stop();return;}
+  const txt=Q[qi],u=new SpeechSynthesisUtterance(txt);
+  u.lang='en-US';u.rate=parseFloat(document.getElementById('tRate').value||1);
+  const vi=document.getElementById('tVoice').selectedIndex;
+  const vs=synth.getVoices().filter(v=>/^en/i.test(v.lang));if(vs[vi])u.voice=vs[vi];
+  document.querySelectorAll('.s').forEach(s=>s.classList.toggle('cur',+s.dataset.s===qi&&cur.paras.length>0));
+  document.getElementById('tInfo').textContent=`第 ${qi+1} / ${Q.length} 句`;
+  u.onboundary=e=>{
+    const idx=e.charIndex,spans=document.querySelectorAll('.s.cur .w');
+    let pos=0;spans.forEach(sp=>{const t=sp.textContent;sp.classList.toggle('hl',idx>=pos&&idx<pos+t.length);pos+=t.length+1;});
+  };
+  u.onend=()=>{qi++;play();};
+  playing=true;document.getElementById('tts').classList.add('on');document.getElementById('tPlay').textContent='⏸';
+  synth.speak(u);
+}
+function togglePlay(){if(playing){synth.pause();playing=false;document.getElementById('tPlay').textContent='▶';}else{synth.resume();playing=true;document.getElementById('tPlay').textContent='⏸';}}
+function stop(){synth.cancel();playing=false;qi=0;document.getElementById('tts').classList.remove('on');document.querySelectorAll('.s,.w').forEach(x=>x.classList.remove('cur','hl'));}
+function restart(){if(playing){const i=qi;stop();speakOne(i);}}
+render();
+</script>
+</body>
+</html>
