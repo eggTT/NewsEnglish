@@ -1,20 +1,13 @@
-import json
-import requests
-import feedparser
+import json, re, feedparser
 from datetime import date
-import re
 
 def fetch_articles(source_name, feed_url):
     articles = []
     try:
         feed = feedparser.parse(feed_url)
         for entry in feed.entries[:5]:
-            # 加上容错处理，防止因为某个字段缺失导致崩溃
-            summary = ""
-            if hasattr(entry, 'description'):
-                summary = entry.description
-            elif hasattr(entry, 'summary'):
-                summary = entry.summary
+            # 安全获取简介，防止某些网站字段缺失导致崩溃
+            summary = entry.get('summary', entry.get('description', 'No summary available'))[:300]
             
             articles.append({
                 "id": len(articles) + 1,
@@ -23,11 +16,10 @@ def fetch_articles(source_name, feed_url):
                 "source": source_name,
                 "date": str(date.today()),
                 "img": "",
-                "paras": [summary[:300]] if summary else ["No summary available."]
+                "paras": [summary]
             })
     except Exception as e:
-        # 打印错误但不崩溃，保证后续代码能继续执行
-        print(f"Error fetching {source_name}: {e}")
+        print(f"Warning: Failed to fetch {source_name}: {e}")
     return articles
 
 sources = [
@@ -37,35 +29,24 @@ sources = [
 ]
 
 all_articles = []
+# 循环抓取，即使某一个源报错，也不影响其他源
 for name, url in sources:
-    # 确保循环不会因为单个网站报错而彻底停止
-    try:
-        all_articles.extend(fetch_articles(name, url))
-    except Exception as e:
-        print(f"Skipped {name} due to error: {e}")
+    all_articles.extend(fetch_articles(name, url))
 
-# 重新分配 ID
+# 重新分配全局ID
 for i, art in enumerate(all_articles):
     art["id"] = i + 1
 
-# 检查 index.html 是否存在
-html = ""
-try:
-    with open("index.html", "r", encoding="utf-8") as f:
-        html = f.read()
-except FileNotFoundError:
-    print("Warning: index.html not found in the repository! Skipping update.")
-    exit(0)
+# 读取本地的 index.html 模板
+with open("index.html", "r", encoding="utf-8") as f:
+    html = f.read()
 
-# 替换掉旧的 let ART=[...]
+# 替换数据
 new_data = 'let ART=' + json.dumps(all_articles, ensure_ascii=False) + ';'
-if re.search(r'let ART=\[.*?\];', html, flags=re.S):
-    html = re.sub(r'let ART=\[.*?\];', new_data, html, flags=re.S)
-else:
-    # 如果找不到 let ART，就在 </head> 或 </body> 前插入（兜底方案）
-    html = html.replace("</head>", f"{new_data}</head>")
+html = re.sub(r'let ART=\[.*?\];', new_data, html, flags=re.S)
 
+# 写入新的 index.html
 with open("index.html", "w", encoding="utf-8") as f:
     f.write(html)
 
-print(f"Successfully updated {len(all_articles)} articles in index.html.")
+print(f"Successfully updated {len(all_articles)} articles.")
