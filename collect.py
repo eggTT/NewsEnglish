@@ -38,11 +38,23 @@ for i, art in enumerate(all_articles):
     art["id"] = i + 1
 
 # 读取本地的 index.html 模板
-with open("index.html", "r", encoding="utf-8") as f:
-    html = f.read()
+try:
+    with open("index.html", "r", encoding="utf-8") as f:
+        html = f.read()
+except FileNotFoundError:
+    # 如果万一index.html不存在，创建一个最基础的模板
+    html = """<!DOCTYPE html>
+<html>
+<head><title>News</title></head>
+<body>
+    <div id="app"></div>
+    <script>let ART=[];</script>
+</body>
+</html>"""
 
 # 替换数据
 new_data = 'let ART=' + json.dumps(all_articles, ensure_ascii=False) + ';'
+# 使用正则安全替换，防止页面其他js代码干扰
 html = re.sub(r'let ART=\[.*?\];', new_data, html, flags=re.S)
 
 # 写入新的 index.html
