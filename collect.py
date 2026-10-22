@@ -32,13 +32,16 @@ for name, url in sources:
 for i, art in enumerate(all_articles):
     art["id"] = i + 1
 
-with open("NewsEnglish.html", "r", encoding="utf-8") as f:
+# 【注意】这里已经改成了 index.html
+with open("index.html", "r", encoding="utf-8") as f:
     html = f.read()
 
 import re
+# 替换掉旧的 let ART=[...]
 html = re.sub(r'let ART=\[.*?\];', 'let ART=' + json.dumps(all_articles, ensure_ascii=False) + ';', html, flags=re.S)
 
-with open("NewsEnglish.html", "w", encoding="utf-8") as f:
+# 【注意】这里也已经改成了 index.html
+with open("index.html", "w", encoding="utf-8") as f:
     f.write(html)
 
 print(f"Successfully updated {len(all_articles)} articles.")
